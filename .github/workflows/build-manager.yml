@@ -190,10 +190,11 @@ jobs:
           else
             MSG="$(git log -1 --pretty=%B)"
           fi
-          echo "MESSAGE<<EOF"
-          echo "$MSG"
-          echo "EOF"
-          echo "URL=${{ github.server_url }}/${{ github.repository }}/commit/$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          cat <<EOF >> "$GITHUB_OUTPUT"
+          MESSAGE<<MESSAGE_EOF
+          $MSG
+          MESSAGE_EOF
+          EOF
 
       - name: Determine manager variant
         id: determine
