@@ -247,8 +247,7 @@ jobs:
           TITLE: ${{ steps.determine.outputs.title }}
           BRANCH: ${{ github.ref_name }}
         run: |
-          pip3 install telethon
           export VERSION=$(git rev-list --count HEAD)
           APK_DEBUG=apk/debug/*.apk
           APK_RELEASE=apk/release/*.apk
-          python3 $GITHUB_WORKSPACE/scripts/ksubot.py $APK_DEBUG $APK_RELEASE
+          bash $GITHUB_WORKSPACE/scripts/resukibot.sh $APK_DEBUG $APK_RELEASE
