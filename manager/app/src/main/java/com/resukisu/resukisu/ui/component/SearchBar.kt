@@ -5,6 +5,8 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,12 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.twotone.ArrowBack
+import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -36,7 +39,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
@@ -47,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -200,7 +201,7 @@ fun SearchAppBar(
                 modifier = Modifier
                     .focusRequester(focusRequester)
                     .clip(SearchBarDefaults.inputFieldShape)
-                    .padding(bottom = 5.dp),
+                    .padding(vertical = 5.dp),
                 searchBarState = searchBarState,
                 textFieldState = textFieldState,
                 onSearch = { text ->
@@ -214,50 +215,64 @@ fun SearchAppBar(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = cardAlpha),
                 ),
                 placeholder = {
-                    if (searchBarState.currentValue == SearchBarValue.Collapsed) {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clearAndSetSemantics {},
-                            text = searchBarPlaceHolderText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clearAndSetSemantics {},
+                        text = searchBarPlaceHolderText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 leadingIcon = {
-                    Icon(
-                        imageVector =
-                            if (onBackClick != null || !isExpanded)
-                                Icons.Default.Search
-                            else
-                                Icons.AutoMirrored.Default.ArrowBack,
-                        contentDescription =
-                            if (onBackClick != null || !isExpanded)
-                                stringResource(R.string.back)
-                            else
-                                stringResource(R.string.search),
-
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                scope.launch {
-                                    if (onBackClick != null || !isExpanded) {
-                                        searchBarState.animateToExpanded()
-                                        focusRequester.requestFocus()
-                                        keyboardController?.show()
-                                    } else {
-                                        searchBarState.animateToCollapsed()
-                                        keyboardController?.hide()
-                                        focusManager.clearFocus()
+                    Row {
+                        if (onBackClick == null && isExpanded) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.TwoTone.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        if (textFieldState.text.isNotEmpty()) {
+                                            textFieldState.edit {
+                                                replace(0, length, "")
+                                            }
+                                            return@clickable
+                                        }
+                                        scope.launch {
+                                            searchBarState.animateToCollapsed()
+                                            keyboardController?.hide()
+                                            focusManager.clearFocus()
+                                        }
                                     }
-                                }
-                            }
-                            .padding(8.dp)
-                    )
+                                    .padding(8.dp)
+                            )
+                        }
+                        else {
+                            Icon(
+                                imageVector = Icons.TwoTone.Search,
+                                contentDescription = stringResource(R.string.search),
+
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        scope.launch {
+                                            searchBarState.animateToExpanded()
+                                            focusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+                                    }
+                                    .padding(8.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(3.dp))
+                    }
                 }
             )
         },
@@ -265,10 +280,16 @@ fun SearchAppBar(
             if (onBackClick != null) {
                 IconButton(onClick = {
                     if (isExpanded) {
-                        scope.launch {
-                            searchBarState.animateToCollapsed()
-                            keyboardController?.hide()
-                            focusManager.clearFocus()
+                        if (textFieldState.text.isNotEmpty()) {
+                            textFieldState.edit {
+                                replace(0, length, "")
+                            }
+                        } else {
+                            scope.launch {
+                                searchBarState.animateToCollapsed()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
                         }
                         return@IconButton
                     }
